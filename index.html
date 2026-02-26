@@ -1,1 +1,216 @@
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OneWave AI - Pipeline Command Center</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0f;color:#e0e0e0;min-height:100vh}
+.header{background:linear-gradient(135deg,#1a1a2e,#16213e);padding:20px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #2a2a4a;position:sticky;top:0;z-index:100}
+.header h1{font-size:20px;font-weight:600;color:#fff}
+.header h1 span{color:#6c63ff}
+.header .meta{font-size:12px;color:#888;display:flex;gap:16px;align-items:center}
+.header .meta .live-dot{width:8px;height:8px;background:#00e676;border-radius:50%;animation:pulse 2s infinite;display:inline-block}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.container{max-width:1400px;margin:0 auto;padding:20px}
+.tabs{display:flex;gap:4px;margin-bottom:20px;background:#12121a;border-radius:10px;padding:4px;border:1px solid #1e1e30;overflow-x:auto}
+.tab{padding:10px 20px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:#888;transition:all .2s;white-space:nowrap;border:none;background:none}
+.tab:hover{color:#ccc;background:#1a1a2a}
+.tab.active{background:#6c63ff;color:#fff}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.stats-row{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:20px}
+.stat-card{background:#12121a;border:1px solid #1e1e30;border-radius:10px;padding:16px;text-align:center}
+.stat-card .number{font-size:26px;font-weight:700;color:#fff}
+.stat-card .label{font-size:11px;color:#888;margin-top:4px;text-transform:uppercase;letter-spacing:1px}
+.stat-card.purple .number{color:#6c63ff}
+.stat-card.green .number{color:#00e676}
+.stat-card.orange .number{color:#ff9800}
+.stat-card.red .number{color:#ff5252}
+.stat-card.blue .number{color:#42a5f5}
+.stat-card.teal .number{color:#26c6da}
+.card{background:#12121a;border:1px solid #1e1e30;border-radius:12px;padding:20px;margin-bottom:16px}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:1.5px;color:#6c63ff;font-weight:700;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #1e1e30}
+.pipeline-table{width:100%;border-collapse:collapse;font-size:13px}
+.pipeline-table th{text-align:left;padding:10px 12px;color:#888;font-size:11px;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid #1e1e30;font-weight:600;white-space:nowrap}
+.pipeline-table td{padding:12px;border-bottom:1px solid #0f0f18;vertical-align:top}
+.pipeline-table tr:hover{background:#16162a}
+.pipeline-table .deal-name{font-weight:600;color:#fff;font-size:14px}
+.pipeline-table .deal-sub{color:#666;font-size:11px;margin-top:2px}
+.stage{display:inline-block;font-size:11px;padding:3px 10px;border-radius:12px;font-weight:600;white-space:nowrap}
+.stage.discovery{background:#42a5f522;color:#42a5f5}
+.stage.proposal{background:#ff980022;color:#ff9800}
+.stage.active{background:#00e67622;color:#00e676}
+.stage.negotiation{background:#ab47bc22;color:#ce93d8}
+.stage.new-lead{background:#78909c22;color:#90a4ae}
+.stage.stalled{background:#ff525222;color:#ff5252}
+.health{display:inline-block;width:10px;height:10px;border-radius:50%}
+.health.hot{background:#00e676;box-shadow:0 0 6px #00e67666}
+.health.warm{background:#ff9800;box-shadow:0 0 6px #ff980066}
+.health.cold{background:#ff5252;box-shadow:0 0 6px #ff525266}
+.meeting-row{display:flex;gap:16px;padding:10px 0;border-bottom:1px solid #1a1a2a;align-items:flex-start}
+.meeting-row:last-child{border-bottom:none}
+.meeting-date{min-width:100px;font-size:12px;color:#6c63ff;font-weight:600}
+.meeting-info .title{font-size:14px;font-weight:600;color:#fff}
+.meeting-info .detail{font-size:12px;color:#888;margin-top:2px}
+.action-row{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid #1a1a2a;align-items:flex-start}
+.action-row:last-child{border-bottom:none}
+.action-check{width:16px;height:16px;border:2px solid #333;border-radius:4px;flex-shrink:0;margin-top:2px}
+.action-text{font-size:13px;color:#ddd}
+.action-meta{font-size:11px;color:#666;margin-top:3px}
+.action-priority{font-size:10px;padding:1px 6px;border-radius:3px;font-weight:600;margin-left:6px}
+.priority-high{background:#ff525222;color:#ff5252}
+.priority-med{background:#ff980022;color:#ff9800}
+.love-card{background:#1a1020;border:1px solid #ff525233;border-radius:10px;padding:16px;margin-bottom:10px}
+.love-card .name{font-size:14px;font-weight:600;color:#ff8a80}
+.love-card .reason{font-size:12px;color:#aaa;margin-top:4px}
+.love-card .action{font-size:12px;color:#6c63ff;margin-top:6px;font-weight:600}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.day-cell{background:#0a0a12;border:1px solid #1e1e30;border-radius:8px;padding:8px;min-height:70px}
+.day-cell.today{border-color:#6c63ff;background:#6c63ff11}
+.day-cell .day-label{font-size:10px;color:#666;font-weight:600}
+.day-cell .day-num{font-size:15px;color:#fff;font-weight:700}
+.day-cell.today .day-num{color:#6c63ff}
+.day-cell .event{font-size:9px;background:#6c63ff22;color:#a8a3ff;padding:2px 5px;border-radius:3px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.footer{text-align:center;padding:20px;color:#444;font-size:11px}
+.table-wrap{overflow-x:auto}
+.tag{display:inline-block;font-size:10px;padding:1px 6px;border-radius:3px;margin-right:4px}
+.tag.client{background:#00e67622;color:#00e676}
+.tag.prospect{background:#6c63ff22;color:#a8a3ff}
+@media(max-width:1024px){.stats-row{grid-template-columns:repeat(3,1fr)}.two-col,.three-col{grid-template-columns:1fr}}
+@media(max-width:768px){.stats-row{grid-template-columns:repeat(2,1fr)}.week-grid{grid-template-columns:repeat(4,1fr)}}
+</style>
+</head>
+<body>
+<div class="header">
+<h1><span>OneWave</span> AI - Pipeline Command Center</h1>
+<div class="meta"><span class="live-dot"></span><span>Parker Newell - Eastern Time</span></div>
+</div>
+<div class="container">
+<div class="tabs">
+<button class="tab active" onclick="showTab('pipeline')">Pipeline</button>
+<button class="tab" onclick="showTab('meetings')">All Meetings</button>
+<button class="tab" onclick="showTab('actions')">Action Items</button>
+<button class="tab" onclick="showTab('needs-love')">Needs Love</button>
+<button class="tab" onclick="showTab('calendar')">Calendar</button>
+<button class="tab" onclick="showTab('today')">Today</button>
+</div>
+<div class="stats-row">
+<div class="stat-card purple"><div class="number">14</div><div class="label">Total Deals</div></div>
+<div class="stat-card green"><div class="number">5</div><div class="label">Active Clients</div></div>
+<div class="stat-card blue"><div class="number">6</div><div class="label">In Discovery</div></div>
+<div class="stat-card orange"><div class="number">3</div><div class="label">Need Attention</div></div>
+<div class="stat-card teal"><div class="number">20+</div><div class="label">Meetings Booked</div></div>
+<div class="stat-card red"><div class="number">8</div><div class="label">Open Actions</div></div>
+</div>
+<div id="pipeline" class="tab-content active">
+<div class="card">
+<h2>Full Pipeline</h2>
+<div class="table-wrap">
+<table class="pipeline-table">
+<thead><tr><th></th><th>Deal / Account</th><th>Stage</th><th>Key Contacts</th><th>Est. Value</th><th>Last Touch</th><th>Next Step</th></tr></thead>
+<tbody>
+<tr><td><span class="health hot"></span></td><td><div class="deal-name">Nationwide Haul (NWH) <span class="tag client">CLIENT</span></div><div class="deal-sub">AI sales bot - Call transcription to CRM to follow-up</div></td><td><span class="stage active">Active</span></td><td>Adriana Sanchez, Derek Madon (CEO), Patrick</td><td style="color:#00e676;font-weight:600">Recurring</td><td>Feb 26 <span style="color:#00e676;font-size:11px">Today</span></td><td>Adriana/Gabe meeting 4:30 PM ET today</td></tr>
+<tr><td><span class="health hot"></span></td><td><div class="deal-name">Prism Places <span class="tag client">CLIENT</span></div><div class="deal-sub">Weekly recurring engagement</div></td><td><span class="stage active">Active</span></td><td>Kyle Faulkner, Jesse Flitt, Justin Knight, Rupesh, Rachel, Tim</td><td style="color:#00e676;font-weight:600">Recurring</td><td>Weekly (Thu 2 PM)</td><td>Continue weekly cadence</td></tr>
+<tr><td><span class="health hot"></span></td><td><div class="deal-name">Manifest <span class="tag client">CLIENT</span></div><div class="deal-sub">Warehouse capacity - ShipHero MCP integration</div></td><td><span class="stage active">Active</span></td><td>Via Slack #manifest-owai</td><td style="color:#00e676;font-weight:600">Recurring</td><td>Ongoing</td><td>Continue ShipHero integration work</td></tr>
+<tr><td><span class="health hot"></span></td><td><div class="deal-name">Viking Sports Capital Mgmt <span class="tag prospect">PROSPECT</span></div><div class="deal-sub">AI model for sports collectibles pricing/valuation</div></td><td><span class="stage discovery">Discovery</span></td><td>Medon Michaelides, Stuart Lieblein, Jeff Toewe</td><td style="color:#ff9800;font-weight:600">$10K-$60K</td><td>Feb 26 <span style="color:#00e676;font-size:11px">Today</span></td><td>Send data requirements; Gabe send secure link; follow-up next week</td></tr>
+<tr><td><span class="health hot"></span></td><td><div class="deal-name">Victory Cruise Lines <span class="tag prospect">PROSPECT</span></div><div class="deal-sub">CruisePAL API integration - Manual spreadsheet pain</div></td><td><span class="stage proposal">Proposal</span></td><td>Eric, Paula, Carolina</td><td style="color:#ff9800;font-weight:600">TBD</td><td>Feb 25</td><td>Follow up on proposal - desperate need - close fast</td></tr>
+<tr><td><span class="health warm"></span></td><td><div class="deal-name">Pyramid Global Hospitality <span class="tag prospect">PROSPECT</span></div><div class="deal-sub">By far our largest potential client</div></td><td><span class="stage new-lead">New Lead</span></td><td>TBD - coordinating meeting</td><td style="color:#42a5f5;font-weight:600">Large</td><td>Slack mention</td><td>Get meeting booked ASAP</td></tr>
+<tr><td><span class="health warm"></span></td><td><div class="deal-name">Slidr (Mike Trombino) <span class="tag prospect">PROSPECT</span></div><div class="deal-sub">Custom system replacing BambooHR + CloseIO</div></td><td><span class="stage proposal">Proposal</span></td><td>Mike Trombino</td><td style="color:#888">$300/mo savings</td><td>Feb 19</td><td>Gabe: send storage quote; Luke: send skills pack</td></tr>
+<tr><td><span class="health warm"></span></td><td><div class="deal-name">Athena Equity <span class="tag prospect">PROSPECT</span></div><div class="deal-sub">New prospect - meeting booked</div></td><td><span class="stage discovery">Discovery</span></td><td>rlouv@athenaequity.com</td><td style="color:#888">TBD</td><td>Booked</td><td>Intro call Mon Mar 2, 1:30 PM ET</td></tr>
+<tr><td><span class="health warm"></span></td><td><div class="deal-name">Magellan Jets <span class="tag prospect">PROSPECT</span></div><div class="deal-sub">In-person at Logan Conference Room</div></td><td><span class="stage discovery">Discovery</span></td><td>Lindsey O'Brien, Joshua Hebert</td><td style="color:#888">TBD</td><td>Feb 24</td><td>Follow up from in-person meeting</td></tr>
+<tr><td><span class="health warm"></span></td><td><div class="deal-name">Navy Yard Hospitality <span class="tag prospect">PROSPECT</span></div><div class="deal-sub">YPO presentation - senior leadership meeting</div></td><td><span class="stage discovery">Discovery</span></td><td>Charlie Larner, Sal Boscarino</td><td style="color:#888">TBD</td><td>Feb 25</td><td>Follow-up email sent - waiting for response</td></tr>
+<tr><td><span class="health warm"></span></td><td><div class="deal-name">Sergey Petrossov <span class="tag prospect">PROSPECT</span></div><div class="deal-sub">AI consulting engagement</div></td><td><span class="stage proposal">Proposal</span></td><td>Sergey Petrossov</td><td style="color:#ff9800;font-weight:600">$1K/mo</td><td>Proposal created</td><td>Send proposal via e-sign</td></tr>
+<tr><td><span class="health warm"></span></td><td><div class="deal-name">Michael Grossman <span class="tag prospect">PROSPECT</span></div><div class="deal-sub">Starting ~3/1 with Abhishek</div></td><td><span class="stage negotiation">Negotiation</span></td><td>Michael Grossman, Abhishek</td><td style="color:#888">TBD</td><td>Per Gabe</td><td>Onboarding ~Mar 1</td></tr>
+<tr><td><span class="health cold"></span></td><td><div class="deal-name">Swoop by Kate <span class="tag prospect">PROSPECT</span></div><div class="deal-sub">Home organization - Multiple reschedules</div></td><td><span class="stage stalled">Stalled</span></td><td>Kate Brooks</td><td style="color:#888">TBD</td><td>Feb 25 (cancelled)</td><td>Rebook - multiple no-shows/cancellations</td></tr>
+<tr><td><span class="health cold"></span></td><td><div class="deal-name">Jerrad Ward <span class="tag prospect">PROSPECT</span></div><div class="deal-sub">Construction company - Parker wants to onboard</div></td><td><span class="stage new-lead">New Lead</span></td><td>Jerrad Ward</td><td style="color:#888">TBD</td><td>Slack mention</td><td>Book intro meeting</td></tr>
+</tbody></table></div></div></div>
+<div id="meetings" class="tab-content">
+<div class="two-col">
+<div class="card"><h2>Past Meetings (Feb 2026)</h2>
+<div class="meeting-row"><div class="meeting-date">Feb 4</div><div class="meeting-info"><div class="title">NWH / OWAI</div><div class="detail">Nationwide Haul kickoff</div></div></div>
+<div class="meeting-row"><div class="meeting-date">Feb 5</div><div class="meeting-info"><div class="title">NWH / OWAI Follow-up</div><div class="detail">Continued from kickoff</div></div></div>
+<div class="meeting-row"><div class="meeting-date">Feb 17</div><div class="meeting-info"><div class="title">Swoop by Kate (No-show)</div><div class="detail">Kate Brooks did not attend</div></div></div>
+<div class="meeting-row"><div class="meeting-date">Feb 19</div><div class="meeting-info"><div class="title">OWAI &amp; Slidr</div><div class="detail">Mike Trombino - Custom biz system - Action items pending</div></div></div>
+<div class="meeting-row"><div class="meeting-date">Feb 19</div><div class="meeting-info"><div class="title">Victory Cruise Lines</div><div class="detail">Eric, Paula, Carolina - CruisePAL API - Proposal presented</div></div></div>
+<div class="meeting-row"><div class="meeting-date">Feb 19</div><div class="meeting-info"><div class="title">NWH Huddle</div><div class="detail">Quick sync with NWH team</div></div></div>
+<div class="meeting-row"><div class="meeting-date">Feb 24</div><div class="meeting-info"><div class="title">Magellan Jets (In-Person)</div><div class="detail">Logan Conference Room - Lindsey O'Brien, Joshua Hebert</div></div></div>
+<div class="meeting-row"><div class="meeting-date">Feb 25</div><div class="meeting-info"><div class="title">Victory Cruise Lines (Follow-up)</div><div class="detail">Second meeting - Eric, Paula</div></div></div>
+<div class="meeting-row"><div class="meeting-date">Feb 25</div><div class="meeting-info"><div class="title">Swoop by Kate (Cancelled)</div><div class="detail">Kate cancelled again - Needs rebook</div></div></div>
+</div>
+<div class="card"><h2>Upcoming Meetings</h2>
+<div class="meeting-row" style="background:#6c63ff11;border-radius:8px;padding:12px;margin-bottom:6px"><div class="meeting-date" style="color:#ff9800">TODAY</div><div class="meeting-info"><div class="title">Viking Sports Capital Mgmt - 3:00 PM ET</div><div class="detail">Parker, Gabe, Luke, Medon, Stuart, Jeff</div></div></div>
+<div class="meeting-row" style="background:#6c63ff11;border-radius:8px;padding:12px;margin-bottom:6px"><div class="meeting-date" style="color:#ff9800">TODAY</div><div class="meeting-info"><div class="title">Adriana Sanchez &amp; Gabe - 4:30 PM ET</div><div class="detail">Gabe (org), Adriana (NWH), Parker</div></div></div>
+<div class="meeting-row"><div class="meeting-date">Mar 2</div><div class="meeting-info"><div class="title">Athena Equity Intro - 1:30 PM ET</div><div class="detail">New prospect</div></div></div>
+<div class="meeting-row"><div class="meeting-date">Mar 3</div><div class="meeting-info"><div class="title">Weekly Internal Scrum - 7:00 PM ET</div><div class="detail">Recurring - Organized by Gabe</div></div></div>
+<div class="meeting-row"><div class="meeting-date">Weekly</div><div class="meeting-info"><div class="title">Prism Places - Thu 2:00 PM ET</div><div class="detail">Kyle, Jesse, Justin, Rupesh, Rachel, Tim</div></div></div>
+</div></div></div>
+<div id="actions" class="tab-content">
+<div class="card"><h2>Open Action Items</h2>
+<div class="action-row"><div class="action-check"></div><div><div class="action-text"><strong>Parker:</strong> Send data requirements outline to Viking Sports Capital <span class="action-priority priority-high">HIGH</span></div><div class="action-meta">From: Viking Sports call - Feb 26 - Due: ASAP</div></div></div>
+<div class="action-row"><div class="action-check"></div><div><div class="action-text"><strong>Gabe:</strong> Send secure link to Stuart Lieblein (Viking Sports) <span class="action-priority priority-high">HIGH</span></div><div class="action-meta">From: Viking Sports call - Feb 26 - Due: This week</div></div></div>
+<div class="action-row"><div class="action-check"></div><div><div class="action-text"><strong>Parker:</strong> Accept Adriana/Gabe meeting invite (4:30 PM today) <span class="action-priority priority-high">HIGH</span></div><div class="action-meta">Calendar - Feb 26 - Due: Before 4:30 PM ET</div></div></div>
+<div class="action-row"><div class="action-check"></div><div><div class="action-text"><strong>Parker:</strong> Confirm Gabe accepted Viking Sports call <span class="action-priority priority-high">HIGH</span></div><div class="action-meta">Calendar - Feb 26 - Due: Before 3 PM ET</div></div></div>
+<div class="action-row"><div class="action-check"></div><div><div class="action-text"><strong>Gabe:</strong> Mark up storage needs for Slidr CRM + send quote <span class="action-priority priority-med">MED</span></div><div class="action-meta">From: OWAI &amp; Slidr meeting - Feb 19 - Open 7 days</div></div></div>
+<div class="action-row"><div class="action-check"></div><div><div class="action-text"><strong>Luke:</strong> Send Mike Trombino the skills pack <span class="action-priority priority-med">MED</span></div><div class="action-meta">From: OWAI &amp; Slidr meeting - Feb 19 - Open 7 days</div></div></div>
+<div class="action-row"><div class="action-check"></div><div><div class="action-text"><strong>Parker:</strong> Follow up with Victory Cruise Lines on proposal <span class="action-priority priority-med">MED</span></div><div class="action-meta">Desperate need - close quickly - Last touch Feb 25</div></div></div>
+<div class="action-row"><div class="action-check"></div><div><div class="action-text"><strong>Parker:</strong> Send Sergey Petrossov proposal via e-sign <span class="action-priority priority-med">MED</span></div><div class="action-meta">$1K/mo consulting - Proposal ready (Luke created)</div></div></div>
+</div></div>
+<div id="needs-love" class="tab-content">
+<div class="card"><h2>Deals That Need Attention</h2>
+<div class="three-col">
+<div class="love-card"><div class="name">Swoop by Kate</div><div class="reason">Multiple no-shows/cancellations. Feb 17 no-show, Feb 25 cancelled. Risk of losing entirely.</div><div class="action">Personally reach out to Kate Brooks and rebook with confirmation</div></div>
+<div class="love-card"><div class="name">Pyramid Global Hospitality</div><div class="reason">By far our largest potential client but no meeting booked yet. Mentioned only in Slack.</div><div class="action">Get a meeting on the calendar immediately</div></div>
+<div class="love-card"><div class="name">Jerrad Ward</div><div class="reason">Construction company - Parker wants to onboard but no meeting booked. Cold lead status.</div><div class="action">Send intro email / book meeting</div></div>
+<div class="love-card"><div class="name">Slidr - Open Action Items</div><div class="reason">Action items from Feb 19 still open (7 days). Gabe's quote and Luke's skills pack not sent.</div><div class="action">Chase Gabe and Luke to complete their items</div></div>
+<div class="love-card"><div class="name">Magellan Jets</div><div class="reason">In-person meeting was Feb 24 - no follow-up activity visible yet.</div><div class="action">Send follow-up email / next steps</div></div>
+<div class="love-card"><div class="name">Navy Yard Hospitality</div><div class="reason">Follow-up email sent Feb 25 for senior leadership meeting. No response yet.</div><div class="action">Follow up again if no response by Feb 28</div></div>
+</div></div></div>
+<div id="calendar" class="tab-content">
+<div class="card"><h2>This Week - Feb 23-Mar 1</h2>
+<div class="week-grid">
+<div class="day-cell"><div class="day-label">Mon</div><div class="day-num">23</div></div>
+<div class="day-cell"><div class="day-label">Tue</div><div class="day-num">24</div><div class="event">4PM Magellan Jets</div></div>
+<div class="day-cell"><div class="day-label">Wed</div><div class="day-num">25</div><div class="event">Victory Cruise</div></div>
+<div class="day-cell today"><div class="day-label">Thu - Today</div><div class="day-num">26</div><div class="event">3PM Viking Sports</div><div class="event">4:30 Adriana/Gabe</div></div>
+<div class="day-cell"><div class="day-label">Fri</div><div class="day-num">27</div></div>
+<div class="day-cell"><div class="day-label">Sat</div><div class="day-num">28</div></div>
+<div class="day-cell"><div class="day-label">Sun</div><div class="day-num">1</div></div>
+</div></div>
+<div class="card"><h2>Next Week - Mar 2-8</h2>
+<div class="week-grid">
+<div class="day-cell"><div class="day-label">Mon</div><div class="day-num">2</div><div class="event">1:30 Athena Equity</div></div>
+<div class="day-cell"><div class="day-label">Tue</div><div class="day-num">3</div><div class="event">7PM Scrum</div></div>
+<div class="day-cell"><div class="day-label">Wed</div><div class="day-num">4</div></div>
+<div class="day-cell"><div class="day-label">Thu</div><div class="day-num">5</div><div class="event">2PM Prism Places</div></div>
+<div class="day-cell"><div class="day-label">Fri</div><div class="day-num">6</div></div>
+<div class="day-cell"><div class="day-label">Sat</div><div class="day-num">7</div></div>
+<div class="day-cell"><div class="day-label">Sun</div><div class="day-num">8</div></div>
+</div></div></div>
+<div id="today" class="tab-content">
+<div class="card" style="border-color:#6c63ff44;background:linear-gradient(135deg,#6c63ff11,#12121a)">
+<h2>#1 Priority</h2>
+<div style="font-size:18px;font-weight:700;color:#fff;margin-bottom:6px">Viking Sports Capital Management - 3:00 PM ET</div>
+<div style="font-size:13px;color:#aaa;line-height:1.6">You organized this meeting. 6 attendees - Gabe &amp; Stuart haven't accepted yet.<br>AI model for sports collectibles pricing/valuation. MVP $10K-$60K.<br><strong style="color:#ff9800">Action:</strong> Confirm Gabe is prepped and accepted.</div>
+</div>
+<div class="two-col">
+<div class="card"><h2>Today's Schedule</h2>
+<div class="meeting-row"><div class="meeting-date">3:00 PM</div><div class="meeting-info"><div class="title">Viking Sports Capital &amp; OWAI</div><div class="detail">Parker (org), Gabe, Luke, Medon, Stuart, Jeff</div></div></div>
+<div class="meeting-row"><div class="meeting-date">4:30 PM</div><div class="meeting-info"><div class="title">Adriana Sanchez &amp; Gabe</div><div class="detail">Gabe (org), Adriana (NWH), Parker - Accept invite!</div></div></div>
+</div>
+<div class="card"><h2>Today's Must-Dos</h2>
+<div class="action-row"><div class="action-check"></div><div><div class="action-text">Ping Gabe to accept Viking Sports invite</div><div class="action-meta">Before 3 PM ET - High priority</div></div></div>
+<div class="action-row"><div class="action-check"></div><div><div class="action-text">Accept the Adriana/Gabe meeting at 4:30</div><div class="action-meta">Calendar invite pending</div></div></div>
+<div class="action-row"><div class="action-check"></div><div><div class="action-text">After Viking call: send data requirements outline</div><div class="action-meta">Follow-up from meeting</div></div></div>
+<div class="action-row"><div class="action-check"></div><div><div class="action-text">Follow up on Slidr action items with Gabe &amp; Luke</div><div class="action-meta">Open since Feb 19 - 7 days</div></div></div>
+</div></div></div>
+</div>
+<div class="footer">OneWave AI - Pipeline Command Center - Auto-refreshes 3x daily (9 AM, 12 PM, 5 PM ET) - Powered by Claude</div>
+<script>
+function showTab(tabId){document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));document.getElementById(tabId).classList.add('active');event.target.classList.add('active')}
+</script>
+</body>
+</html>
